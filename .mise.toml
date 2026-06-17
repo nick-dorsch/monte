@@ -1,0 +1,13 @@
+[tools]
+lazygit = "latest"
+jq = "latest"
+ripgrep = "latest"
+
+python = "3.13"
+uv = "latest"
+ruff = "latest"
+
+task = "latest"
+
+[env]
+_.file = ".env"

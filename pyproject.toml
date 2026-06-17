@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "monte"
+version = "0.1.0"
+description = "Composable tools for quick Monte Carlo modelling and distribution elicitation."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Nicholas Dorsch" },
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+keywords = [
+    "monte-carlo",
+    "simulation",
+    "probability",
+    "distributions",
+    "elicitation",
+    "uncertainty",
+]
+dependencies = [
+    "matplotlib>=3.11.0",
+    "numpy>=2.2.4",
+    "pydantic>=2.13.4",
+    "scipy>=1.17.1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.14",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/monte"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "PT", "SIM"]
+ignore = [
+    "B008",
+    "E501",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
