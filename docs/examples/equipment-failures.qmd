@@ -24,7 +24,6 @@ annual outcome = number of failures * average outcome per failure
 
 ```{python}
 import matplotlib.pyplot as plt
-import numpy as np
 
 import monte as mt
 ```
@@ -68,7 +67,6 @@ failures.plot(ax=axes[0], color="#4C78A8")
 avg_repair_cost.plot(ax=axes[1], color="#F58518")
 avg_downtime_hours.plot(ax=axes[2], color="#54A24B")
 fig.tight_layout()
-plt.show()
 ```
 
 ## Compose annual outcomes
@@ -153,7 +151,6 @@ axes[1].axvline(120, color="black", linestyle="--", linewidth=1, label="120 hour
 axes[1].legend()
 
 fig.tight_layout()
-plt.show()
 ```
 
 ## What this composition assumes

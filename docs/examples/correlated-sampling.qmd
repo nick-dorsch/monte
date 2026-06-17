@@ -110,7 +110,6 @@ profit.correlate(correlation_matrix)
 
 ```{python}
 profit.copula.corr_matrix.plot(labels=[dist.name for dist in profit.distributions()])
-plt.show()
 ```
 
 ```{python}
@@ -150,7 +149,6 @@ ax.set_ylabel("cumulative probability")
 ax.set_ylim(0, 1)
 ax.legend()
 fig.tight_layout()
-plt.show()
 ```
 
 ## Scalar shortcut

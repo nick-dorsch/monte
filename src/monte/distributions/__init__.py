@@ -1,6 +1,7 @@
 """Probability distribution interfaces and implementations."""
 
 from .base import Distribution
+from .mixture import UvMixture
 from .types import ArrayLike, DataFrameLike
 from .univariate import (
     PERT,
@@ -39,6 +40,7 @@ __all__ = [
     "Exponential",
     "LogitNormal",
     "LogNormal",
+    "UvMixture",
     "NegativeBinomial",
     "Normal",
     "PERT",

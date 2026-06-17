@@ -126,7 +126,6 @@ ax.set_title("Simulated product launch profit")
 ax.set_xlabel("Profit")
 ax.legend()
 fig.tight_layout()
-plt.show()
 ```
 
 ## Why composition matters

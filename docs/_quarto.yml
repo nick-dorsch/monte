@@ -16,21 +16,6 @@ website:
             text: Working with distributions
           - href: examples/mc-composition.qmd
             text: Monte Carlo composition
-          - href: examples/equipment-failures.qmd
-            text: Equipment failures
-          - href: examples/correlated-sampling.qmd
-            text: Correlated sampling with copulas
-  sidebar:
-    style: docked
-    contents:
-      - href: index.qmd
-        text: Home
-      - section: Examples
-        contents:
-          - href: examples/distributions.qmd
-            text: Working with distributions
-          - href: examples/mc-composition.qmd
-            text: Monte Carlo composition
           - href: examples/correlated-sampling.qmd
             text: Correlated sampling with copulas
           - href: examples/equipment-failures.qmd
@@ -38,7 +23,7 @@ website:
 
 format:
   html:
-    theme: flatly
+    theme: minty
     toc: true
     code-fold: false
     code-copy: true
