@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -19,7 +19,7 @@ Operand = Any
 EvaluationCache = dict[tuple[type[Any], int], np.ndarray]
 
 
-@dataclass(frozen=True)
+@dataclass
 class MCModel(ArithmeticMixin):
     """
     Lazy Monte Carlo expression composed from distributions, constants, and models.
@@ -32,6 +32,13 @@ class MCModel(ArithmeticMixin):
     op: Operation
     operands: tuple[Operand, ...]
     name: str | None = None
+    _cached_samples: np.ndarray | None = field(default=None, init=False, repr=False)
+    _cached_size: int | tuple[int, ...] | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
+    _cached_seed: SeedLike = field(default=None, init=False, repr=False)
 
     @classmethod
     def from_operation(
@@ -44,7 +51,11 @@ class MCModel(ArithmeticMixin):
         return cls(op=op, operands=operands, name=name)
 
     def sample(
-        self, size: int | tuple[int, ...] = 1, *, seed: SeedLike = None
+        self,
+        size: int | tuple[int, ...] = 1,
+        *,
+        seed: SeedLike = None,
+        refresh: bool = False,
     ) -> np.ndarray:
         """
         Evaluate the model by sampling distribution leaves and applying operations.
@@ -55,31 +66,67 @@ class MCModel(ArithmeticMixin):
         cached within one evaluation, preserving sample-wise dependence: ``x + x``
         uses the same draws from ``x`` on both sides.
         """
-        rng = get_rng(seed)
-        cache: EvaluationCache = {}
-        return np.asarray(self._eval(size=size, seed=rng, cache=cache))
+        return self._get_samples(size=size, seed=seed, refresh=refresh)
 
     def rvs(
-        self, size: int | tuple[int, ...] = 1, *, seed: SeedLike = None
+        self,
+        size: int | tuple[int, ...] = 1,
+        *,
+        seed: SeedLike = None,
+        refresh: bool = False,
     ) -> np.ndarray:
         """Alias for :meth:`sample` for users familiar with SciPy naming."""
-        return self.sample(size=size, seed=seed)
+        return self.sample(size=size, seed=seed, refresh=refresh)
+
+    def clear_cache(self) -> None:
+        """Clear cached simulation results from this model."""
+        self._cached_samples = None
+        self._cached_size = None
+        self._cached_seed = None
+
+    def _get_samples(
+        self,
+        *,
+        size: int | tuple[int, ...] | None = None,
+        seed: SeedLike = None,
+        refresh: bool = False,
+        default_size: int = 10_000,
+    ) -> np.ndarray:
+        """Return cached samples when suitable, otherwise simulate and cache them."""
+        if not refresh and self._cached_samples is not None:
+            size_matches = size is None or self._cached_size == size
+            seed_matches = seed is None or self._cached_seed == seed
+            if size_matches and seed_matches:
+                return self._cached_samples
+
+        sample_size = default_size if size is None else size
+        rng = get_rng(seed)
+        cache: EvaluationCache = {}
+        samples = np.asarray(self._eval(size=sample_size, seed=rng, cache=cache))
+        self._cached_samples = samples
+        self._cached_size = sample_size
+        self._cached_seed = seed
+        return samples
 
     def summary(
         self,
         *,
-        size: int = 10_000,
+        size: int | tuple[int, ...] | None = None,
         seed: SeedLike = None,
+        refresh: bool = False,
         threshold: float | int | None = None,
         percentiles: list[float | int] | tuple[float | int, ...] = (90, 50, 10),
     ) -> pd.DataFrame:
         """
         Summarize simulated model outcomes as a tidy dataframe.
 
-        The summary includes the mean, configurable percentile rows, and
-        optionally the probability that simulated values exceed ``threshold``.
+        The summary includes the mean, configurable percentiles, and optionally
+        the probability that simulated values exceed ``threshold``. Cached
+        samples are reused by default when available.
         """
-        samples = np.ravel(self.sample(size=size, seed=seed))
+        samples = np.ravel(
+            self._get_samples(size=size, seed=seed, refresh=refresh)
+        )
         values: dict[str, float] = {"mean": float(np.mean(samples))}
 
         if threshold is not None:
@@ -104,8 +151,9 @@ class MCModel(ArithmeticMixin):
         self,
         ax: Any = None,
         *,
-        size: int = 10_000,
+        size: int | tuple[int, ...] | None = None,
         seed: SeedLike = None,
+        refresh: bool = False,
         bins: int | str = 80,
         show: bool = False,
         ecdf_kwargs: dict[str, Any] | None = None,
@@ -117,14 +165,17 @@ class MCModel(ArithmeticMixin):
 
         Returns the primary Matplotlib ``Axes`` object. Extra keyword arguments
         are passed to the ECDF line for convenient calls like
-        ``model.plot(color="steelblue")``.
+        ``model.plot(color="steelblue")``. Cached samples are reused by default
+        when available.
         """
         if ax is None:
             import matplotlib.pyplot as plt
 
             _, ax = plt.subplots()
 
-        samples = np.sort(np.ravel(self.sample(size=size, seed=seed)))
+        samples = np.sort(
+            np.ravel(self._get_samples(size=size, seed=seed, refresh=refresh))
+        )
         ecdf = np.arange(1, samples.size + 1) / samples.size
 
         line_kwargs = {**(ecdf_kwargs or {}), **kwargs}

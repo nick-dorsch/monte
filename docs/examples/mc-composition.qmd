@@ -91,7 +91,7 @@ type(profit).__name__
 
 ```{python}
 sims = profit.sample(size=50_000, seed=42)
-summary = profit.summary(size=50_000, seed=42, threshold=0)
+summary = profit.summary(threshold=0)
 summary
 ```
 
@@ -112,7 +112,7 @@ print(f"Probability of profit: {prob_profit:.1%}")
 
 ```{python}
 fig, ax = plt.subplots(figsize=(8, 4.5))
-profit.plot(ax=ax, size=50_000, seed=42, color="#4C78A8")
+profit.plot(ax=ax, color="#4C78A8")
 ax.axvline(0, color="black", linestyle="--", linewidth=1, label="Break-even")
 ax.axvline(p50, color="#F58518", linewidth=2, label="Median")
 ax.set_title("Simulated product launch profit")

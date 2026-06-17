@@ -35,6 +35,28 @@ def test_reused_distribution_object_uses_same_samples() -> None:
     np.testing.assert_allclose(doubled, expected)
 
 
+def test_model_reuses_cached_samples_across_report_methods() -> None:
+    x = mt.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    samples = model.sample(size=1_000, seed=123)
+    summary = model.summary(threshold=0)
+
+    assert summary.loc["value", "mean"] == pytest.approx(float(np.mean(samples)))
+    assert summary.loc["value", "p(> 0)"] == pytest.approx(float(np.mean(samples > 0)))
+
+
+def test_model_refresh_replaces_cached_samples() -> None:
+    x = mt.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    first = model.sample(size=1_000, seed=123)
+    refreshed = model.sample(size=1_000, seed=456, refresh=True)
+
+    assert not np.array_equal(first, refreshed)
+    np.testing.assert_array_equal(model.sample(size=1_000), refreshed)
+
+
 def test_model_summary_returns_configurable_dataframe() -> None:
     x = mt.Normal.elicit(-1.0, 1.0)
     model = x * 2
