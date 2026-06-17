@@ -17,6 +17,7 @@ from .distributions import (
     UvRealContinuous,
     UvUnitBoundedContinuous,
 )
+from .models import MCModel
 
 __all__ = [
     "ArrayLike",
@@ -24,6 +25,7 @@ __all__ = [
     "DataFrameLike",
     "Distribution",
     "LogitNormal",
+    "MCModel",
     "LogNormal",
     "Normal",
     "PERT",

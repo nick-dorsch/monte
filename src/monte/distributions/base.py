@@ -6,11 +6,12 @@ from typing import Any, Self
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
+from monte.arithmetic import ArithmeticMixin
 from monte.distributions.types import ArrayLike
 from monte.random import SeedLike
 
 
-class Distribution(BaseModel, ABC):
+class Distribution(ArithmeticMixin, BaseModel, ABC):
     """
     Top-level abstract base class for probability distributions.
 
