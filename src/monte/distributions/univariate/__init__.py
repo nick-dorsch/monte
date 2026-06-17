@@ -4,6 +4,8 @@ from .base import UvDistribution
 from .continuous import (
     PERT,
     Beta,
+    Exponential,
+    Gamma,
     LogitNormal,
     LogNormal,
     Normal,
@@ -17,6 +19,8 @@ from .continuous import (
 
 __all__ = [
     "Beta",
+    "Exponential",
+    "Gamma",
     "LogitNormal",
     "LogNormal",
     "Normal",

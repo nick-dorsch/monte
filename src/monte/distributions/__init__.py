@@ -5,6 +5,8 @@ from .types import ArrayLike, DataFrameLike
 from .univariate import (
     PERT,
     Beta,
+    Exponential,
+    Gamma,
     LogitNormal,
     LogNormal,
     Normal,
@@ -21,7 +23,9 @@ __all__ = [
     "ArrayLike",
     "Beta",
     "DataFrameLike",
+    "Gamma",
     "Distribution",
+    "Exponential",
     "LogitNormal",
     "LogNormal",
     "Normal",

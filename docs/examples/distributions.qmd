@@ -26,7 +26,7 @@ expert might say that a typical delivery time is expected to fall between 8 and 
 with 80% confidence.
 
 ```{python}
-elicited = mt.Normal.elicit(
+elicited = mt.LogNormal.elicit(
     lower=8,
     upper=14,
     confidence=0.8,
