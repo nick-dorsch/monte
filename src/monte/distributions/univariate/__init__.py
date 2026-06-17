@@ -19,6 +19,7 @@ from .continuous import (
 from .discrete import (
     Bernoulli,
     Binomial,
+    Geometric,
     Poisson,
     UvCountDiscrete,
     UvDiscrete,
@@ -31,6 +32,7 @@ __all__ = [
     "Binomial",
     "Exponential",
     "Gamma",
+    "Geometric",
     "LogitNormal",
     "LogNormal",
     "Normal",
