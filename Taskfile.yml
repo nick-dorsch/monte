@@ -1,7 +1,0 @@
-version: "3"
-
-tasks:
-  docs:
-    desc: Preview the Quarto documentation website
-    cmds:
-      - uv run --group docs quarto preview docs

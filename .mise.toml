@@ -7,7 +7,25 @@ python = "3.13"
 uv = "latest"
 ruff = "latest"
 
-task = "latest"
-
 [env]
 _.file = ".env"
+
+[tasks.test]
+description = "Run the test suite"
+run = "uv run pytest"
+
+[tasks.lint]
+description = "Run ruff lint checks"
+run = "uv run ruff check ."
+
+[tasks.format]
+description = "Format the codebase with ruff"
+run = "uv run ruff format ."
+
+[tasks.check]
+description = "Run lint and tests"
+depends = ["lint", "test"]
+
+[tasks.docs]
+description = "Preview the Quarto documentation website"
+run = "uv run --group docs quarto preview docs"
