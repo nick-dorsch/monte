@@ -38,6 +38,28 @@ def test_lognormal_elicit_sample_and_fit() -> None:
         LogNormal.fit([0.0, 1.0])
 
 
+def test_continuous_plot_shows_cdf_with_pdf_fill() -> None:
+    import matplotlib.pyplot as plt
+
+    dist = Normal.elicit(lower=10, upper=20, confidence=0.8)
+    fig, ax = plt.subplots()
+
+    returned_ax = dist.plot(ax=ax, color="red")
+
+    assert returned_ax is ax
+    assert ax.get_ylabel() == "cumulative probability"
+    assert ax.get_ylim()[0] == pytest.approx(0)
+    assert ax.get_ylim()[1] == pytest.approx(1)
+
+    assert len(fig.axes) == 2
+    pdf_ax = fig.axes[1]
+    assert len(pdf_ax.get_yticks()) == 0
+    assert pdf_ax.get_ylabel() == ""
+    assert pdf_ax.get_ylim()[0] == pytest.approx(0)
+
+    plt.close(fig)
+
+
 def test_logitnormal_elicit_sample_and_fit() -> None:
     dist = LogitNormal.elicit(lower=0.15, upper=0.25, confidence=0.8)
 

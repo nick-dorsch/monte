@@ -7,10 +7,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from monte.arithmetic import ArithmeticMixin
 from monte.distributions import Distribution
 from monte.random import SeedLike, get_rng
+from monte.summary import percentile_label, threshold_probability_label
 
 Operation = Callable[..., Any]
 Operand = Any
@@ -62,6 +64,96 @@ class MCModel(ArithmeticMixin):
     ) -> np.ndarray:
         """Alias for :meth:`sample` for users familiar with SciPy naming."""
         return self.sample(size=size, seed=seed)
+
+    def summary(
+        self,
+        *,
+        size: int = 10_000,
+        seed: SeedLike = None,
+        threshold: float | int | None = None,
+        percentiles: list[float | int] | tuple[float | int, ...] = (90, 50, 10),
+    ) -> pd.DataFrame:
+        """
+        Summarize simulated model outcomes as a tidy dataframe.
+
+        The summary includes the mean, configurable percentile rows, and
+        optionally the probability that simulated values exceed ``threshold``.
+        """
+        samples = np.ravel(self.sample(size=size, seed=seed))
+        values: dict[str, float] = {"mean": float(np.mean(samples))}
+
+        if threshold is not None:
+            values[threshold_probability_label(threshold)] = float(
+                np.mean(samples > threshold)
+            )
+
+        percentile_values = np.percentile(samples, percentiles)
+        values.update(
+            {
+                percentile_label(percentile): float(value)
+                for percentile, value in zip(
+                    percentiles, percentile_values, strict=True
+                )
+            }
+        )
+
+        index_label = self.name or "value"
+        return pd.DataFrame(values, index=pd.Index([index_label], name="metric"))
+
+    def plot(
+        self,
+        ax: Any = None,
+        *,
+        size: int = 10_000,
+        seed: SeedLike = None,
+        bins: int | str = 80,
+        show: bool = False,
+        ecdf_kwargs: dict[str, Any] | None = None,
+        hist_kwargs: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Plot an empirical CDF with a low-alpha histogram on a secondary axis.
+
+        Returns the primary Matplotlib ``Axes`` object. Extra keyword arguments
+        are passed to the ECDF line for convenient calls like
+        ``model.plot(color="steelblue")``.
+        """
+        if ax is None:
+            import matplotlib.pyplot as plt
+
+            _, ax = plt.subplots()
+
+        samples = np.sort(np.ravel(self.sample(size=size, seed=seed)))
+        ecdf = np.arange(1, samples.size + 1) / samples.size
+
+        line_kwargs = {**(ecdf_kwargs or {}), **kwargs}
+        (ecdf_line,) = ax.plot(samples, ecdf, **line_kwargs)
+
+        hist_ax = ax.twinx()
+        fill_kwargs = {
+            "color": ecdf_line.get_color(),
+            "alpha": 0.2,
+            **(hist_kwargs or {}),
+        }
+        hist_ax.hist(samples, bins=bins, **fill_kwargs)
+
+        ax.set_xlabel(self.name or "value")
+        ax.set_ylabel("cumulative probability")
+        ax.set_ylim(bottom=0, top=1)
+        ax.set_title(self.name or "Monte Carlo model")
+
+        hist_ax.set_ylim(bottom=0)
+        hist_ax.set_yticks([])
+        hist_ax.set_ylabel("")
+        hist_ax.spines["right"].set_visible(False)
+
+        if show:
+            import matplotlib.pyplot as plt
+
+            plt.show()
+
+        return ax
 
     def _eval(
         self,

@@ -1,0 +1,36 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "monte"
+  description: "Examples and reports for composable Monte Carlo modelling with monte."
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - text: Examples
+        menu:
+          - href: examples/mc-composition.qmd
+            text: Monte Carlo composition
+  sidebar:
+    style: docked
+    contents:
+      - href: index.qmd
+        text: Home
+      - section: Examples
+        contents:
+          - href: examples/mc-composition.qmd
+            text: Monte Carlo composition
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: false
+    code-copy: true
+    number-sections: false
+
+execute:
+  warning: false
+  message: false

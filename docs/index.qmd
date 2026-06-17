@@ -1,0 +1,25 @@
+---
+title: "monte documentation"
+---
+
+`monte` is a Python package for quick Monte Carlo modelling, with an emphasis on distribution elicitation and composable models.
+
+This documentation site collects runnable examples and report-style walkthroughs.
+
+## Examples
+
+- [Composing Monte Carlo Models with Distribution Arithmetic](examples/mc-composition.qmd): a new product launch profit model built from elicited distributions and ordinary Python arithmetic.
+
+## Rendering locally
+
+Quarto is distributed as a CLI tool rather than a normal Python package dependency. Install the Quarto CLI from <https://quarto.org/docs/get-started/>, then render the site from the repository root:
+
+```bash
+uv run --group docs quarto render docs
+```
+
+The generated website will be written to:
+
+```text
+docs/_site/
+```

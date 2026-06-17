@@ -6,5 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+# Quarto-generated files
+docs/_site/
+docs/.quarto/
+
 # Virtual environments
 .venv
