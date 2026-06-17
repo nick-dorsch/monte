@@ -124,9 +124,7 @@ class MCModel(ArithmeticMixin):
         the probability that simulated values exceed ``threshold``. Cached
         samples are reused by default when available.
         """
-        samples = np.ravel(
-            self._get_samples(size=size, seed=seed, refresh=refresh)
-        )
+        samples = np.ravel(self._get_samples(size=size, seed=seed, refresh=refresh))
         values: dict[str, float] = {"mean": float(np.mean(samples))}
 
         if threshold is not None:
