@@ -6,6 +6,7 @@ from monte.distributions import (
     Bernoulli,
     Binomial,
     Geometric,
+    NegativeBinomial,
     Poisson,
     UvCountDiscrete,
     UvDiscrete,
@@ -19,6 +20,7 @@ def test_discrete_domain_hierarchy() -> None:
     assert isinstance(Bernoulli.elicit(0.5), UvFiniteDiscrete)
     assert isinstance(Binomial.elicit(10, 0.5), UvFiniteDiscrete)
     assert isinstance(Geometric.elicit(0.5), UvCountDiscrete)
+    assert isinstance(NegativeBinomial.elicit(5, 0.5), UvCountDiscrete)
     assert isinstance(Poisson.elicit(3.0), UvCountDiscrete)
 
 
@@ -162,6 +164,62 @@ def test_geometric_validation_and_serialization() -> None:
     assert restored.name == "attempts"
     assert restored.params == {"p": 0.7}
     assert restored.elicitation_params == {"p": 0.7}
+
+
+def test_negative_binomial_elicit_sample_fit_and_functions() -> None:
+    dist = NegativeBinomial.elicit(r=5, p=0.3)
+
+    assert dist.dist_type == "negative_binomial"
+    assert dist.params == {"r": 5, "p": 0.3}
+    assert dist.elicitation_params == {"r": 5, "p": 0.3}
+    assert dist.support == (0.0, np.inf)
+    assert dist.bounded is False
+    assert dist.mean == pytest.approx(5 * (1 - 0.3) / 0.3)
+    assert dist.variance == pytest.approx(5 * (1 - 0.3) / 0.3**2)
+    assert dist.x_range[0] == -0.5
+    assert dist.x_range[1] > 10.0
+
+    samples = dist.sample(size=(4, 5), seed=1)
+    assert samples.shape == (4, 5)
+    assert np.all(samples >= 0)
+    assert np.all(samples == np.floor(samples))
+    np.testing.assert_array_equal(dist.rvs(size=(4, 5), seed=1), samples)
+
+    x = np.array([-1, 0, 1, 3, 5])
+    np.testing.assert_allclose(dist.pdf(x), stats.nbinom.pmf(x, 5, 0.3))
+    np.testing.assert_allclose(dist.pmf(x), dist.pdf(x))
+    assert dist.cdf(-1) == pytest.approx(0.0)
+    assert dist.ppf(0.0) == pytest.approx(-1.0)
+
+    fitted = NegativeBinomial.fit([2, 4, 7, 9, 12])
+    assert fitted.params["r"] >= 1
+    assert 0 < fitted.params["p"] <= 1
+    assert fitted.elicitation_params is None
+
+
+def test_negative_binomial_validation_and_serialization() -> None:
+    assert NegativeBinomial.elicit(r=10.0, p=0.5).params["r"] == 10
+
+    certain = NegativeBinomial.elicit(r=5, p=1.0)
+    assert np.all(certain.sample(size=10, seed=1) == 0)
+
+    with pytest.raises(ValueError, match="r must be positive"):
+        NegativeBinomial.elicit(0, 0.5)
+    with pytest.raises(ValueError, match="r must be integer"):
+        NegativeBinomial.elicit(5.5, 0.5)
+    with pytest.raises(ValueError, match="p must be in"):
+        NegativeBinomial.elicit(5, 0.0)
+    with pytest.raises(ValueError, match="non-negative"):
+        NegativeBinomial.fit([-1, 0, 1])
+    with pytest.raises(ValueError, match="integer-valued"):
+        NegativeBinomial.fit([0, 1.5])
+
+    original = NegativeBinomial.elicit(r=5, p=0.7, name="failures")
+    restored = NegativeBinomial.model_validate_json(original.model_dump_json())
+    assert restored.dist_type == "negative_binomial"
+    assert restored.name == "failures"
+    assert restored.params == {"r": 5, "p": 0.7}
+    assert restored.elicitation_params == {"r": 5, "p": 0.7}
 
 
 def test_poisson_elicit_sample_fit_and_functions() -> None:
