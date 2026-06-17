@@ -1,0 +1,172 @@
+import numpy as np
+import pytest
+from scipy import stats
+
+from monte.distributions import (
+    Bernoulli,
+    Binomial,
+    Poisson,
+    UvCountDiscrete,
+    UvDiscrete,
+    UvFiniteDiscrete,
+)
+
+
+def test_discrete_domain_hierarchy() -> None:
+    assert issubclass(UvFiniteDiscrete, UvDiscrete)
+    assert issubclass(UvCountDiscrete, UvDiscrete)
+    assert isinstance(Bernoulli.elicit(0.5), UvFiniteDiscrete)
+    assert isinstance(Binomial.elicit(10, 0.5), UvFiniteDiscrete)
+    assert isinstance(Poisson.elicit(3.0), UvCountDiscrete)
+
+
+def test_bernoulli_elicit_sample_fit_and_functions() -> None:
+    dist = Bernoulli.elicit(p=0.3)
+
+    assert dist.dist_type == "bernoulli"
+    assert dist.params == {"p": 0.3}
+    assert dist.elicitation_params == {"p": 0.3}
+    assert dist.support == (0.0, 1.0)
+    assert dist.x_range == (-0.5, 1.5)
+    assert dist.bounded is True
+    assert dist.mean == pytest.approx(0.3)
+    assert dist.variance == pytest.approx(0.21)
+
+    samples = dist.sample(size=10, seed=1)
+    assert samples.shape == (10,)
+    assert np.all(np.isin(samples, [0, 1]))
+    np.testing.assert_array_equal(dist.rvs(size=10, seed=1), samples)
+
+    x = np.array([-1, 0, 1, 2])
+    np.testing.assert_allclose(dist.pdf(x), stats.bernoulli.pmf(x, 0.3))
+    np.testing.assert_allclose(dist.pmf(x), dist.pdf(x))
+    assert dist.cdf(0) == pytest.approx(0.7)
+    assert dist.ppf(1.0) == pytest.approx(1.0)
+
+    fitted = Bernoulli.fit([0, 1, 1, 0, 1])
+    assert fitted.params["p"] == pytest.approx(0.6)
+    assert fitted.elicitation_params is None
+
+
+def test_bernoulli_validation_and_serialization() -> None:
+    with pytest.raises(ValueError, match="p must be in"):
+        Bernoulli.elicit(-0.1)
+    with pytest.raises(ValueError, match="only 0 and 1"):
+        Bernoulli.fit([0, 1, 2])
+
+    original = Bernoulli.elicit(p=0.7, name="success")
+    restored = Bernoulli.model_validate_json(original.model_dump_json())
+    assert restored.dist_type == "bernoulli"
+    assert restored.name == "success"
+    assert restored.params == {"p": 0.7}
+    assert restored.elicitation_params == {"p": 0.7}
+
+
+def test_binomial_elicit_sample_fit_and_functions() -> None:
+    dist = Binomial.elicit(n=10, p=0.3)
+
+    assert dist.dist_type == "binomial"
+    assert dist.params == {"n": 10, "p": 0.3}
+    assert dist.elicitation_params == {"n": 10, "p": 0.3}
+    assert dist.support == (0.0, 10.0)
+    assert dist.x_range == (-0.5, 10.5)
+    assert dist.bounded is True
+    assert dist.mean == pytest.approx(3.0)
+    assert dist.variance == pytest.approx(2.1)
+
+    samples = dist.sample(size=(4, 5), seed=1)
+    assert samples.shape == (4, 5)
+    assert np.all((samples >= 0) & (samples <= 10))
+    np.testing.assert_array_equal(dist.rvs(size=(4, 5), seed=1), samples)
+
+    x = np.array([-1, 0, 5, 10, 11])
+    np.testing.assert_allclose(dist.pdf(x), stats.binom.pmf(x, 10, 0.3))
+    np.testing.assert_allclose(dist.pmf(x), dist.pdf(x))
+    assert dist.cdf(-1) == pytest.approx(0.0)
+    assert dist.ppf(1.0) == pytest.approx(10.0)
+
+    fitted = Binomial.fit([0, 5, 10], n=10)
+    assert fitted.params == {"n": 10, "p": 0.5}
+
+
+def test_binomial_validation_and_serialization() -> None:
+    assert Binomial.elicit(n=10.0, p=0.5).params["n"] == 10
+
+    with pytest.raises(ValueError, match="n must be positive"):
+        Binomial.elicit(0, 0.5)
+    with pytest.raises(ValueError, match="n must be integer"):
+        Binomial.elicit(10.5, 0.5)
+    with pytest.raises(ValueError, match="p must be in"):
+        Binomial.elicit(10, 1.1)
+    with pytest.raises(ValueError, match="integer-valued"):
+        Binomial.fit([0, 1.5], n=10)
+    with pytest.raises(ValueError, match="<= n"):
+        Binomial.fit([0, 11], n=10)
+
+    original = Binomial.elicit(n=10, p=0.7, name="wins")
+    restored = Binomial.model_validate_json(original.model_dump_json())
+    assert restored.dist_type == "binomial"
+    assert restored.name == "wins"
+    assert restored.params == {"n": 10, "p": 0.7}
+    assert restored.elicitation_params == {"n": 10, "p": 0.7}
+
+
+def test_poisson_elicit_sample_fit_and_functions() -> None:
+    dist = Poisson.elicit(lam=3.0)
+
+    assert dist.dist_type == "poisson"
+    assert dist.params == {"lam": 3.0}
+    assert dist.elicitation_params == {"lam": 3.0}
+    assert dist.support == (0.0, np.inf)
+    assert dist.bounded is False
+    assert dist.mean == pytest.approx(3.0)
+    assert dist.variance == pytest.approx(3.0)
+    assert dist.x_range[0] == -0.5
+    assert dist.x_range[1] > 3.0
+
+    samples = dist.sample(size=10, seed=1)
+    assert samples.shape == (10,)
+    assert np.all(samples >= 0)
+    assert np.all(samples == np.floor(samples))
+    np.testing.assert_array_equal(dist.rvs(size=10, seed=1), samples)
+
+    x = np.array([-1, 0, 1, 3, 5])
+    np.testing.assert_allclose(dist.pdf(x), stats.poisson.pmf(x, 3.0))
+    np.testing.assert_allclose(dist.pmf(x), dist.pdf(x))
+    assert dist.cdf(-1) == pytest.approx(0.0)
+    assert dist.ppf(0.0) == pytest.approx(-1.0)
+
+    fitted = Poisson.fit([0, 1, 2, 3, 4])
+    assert fitted.params == {"lam": 2.0}
+
+
+def test_poisson_validation_and_serialization() -> None:
+    zero = Poisson.elicit(lam=0.0)
+    assert np.all(zero.sample(size=10, seed=1) == 0)
+
+    with pytest.raises(ValueError, match="lam must be non-negative"):
+        Poisson.elicit(-1.0)
+    with pytest.raises(ValueError, match="non-negative"):
+        Poisson.fit([-1, 0, 1])
+    with pytest.raises(ValueError, match="integer-valued"):
+        Poisson.fit([0, 1.5])
+
+    original = Poisson.elicit(lam=3.7, name="events")
+    restored = Poisson.model_validate_json(original.model_dump_json())
+    assert restored.dist_type == "poisson"
+    assert restored.name == "events"
+    assert restored.params == {"lam": 3.7}
+    assert restored.elicitation_params == {"lam": 3.7}
+
+
+def test_discrete_plot_returns_axes() -> None:
+    import matplotlib.pyplot as plt
+
+    dist = Poisson.elicit(lam=3.0)
+    fig, ax = plt.subplots()
+
+    returned_ax = dist.plot(ax=ax)
+
+    assert returned_ax is ax
+
+    plt.close(fig)

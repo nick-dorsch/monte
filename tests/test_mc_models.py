@@ -83,7 +83,6 @@ def test_add_copula_clears_cached_independent_samples() -> None:
     assert not np.array_equal(independent, correlated)
 
 
-
 def test_correlate_with_scalar_builds_gaussian_copula_in_distribution_order() -> None:
     x = mt.Normal(params={"mu": 0.0, "sigma": 1.0}, name="x")
     y = mt.Normal(params={"mu": 10.0, "sigma": 2.0}, name="y")
@@ -116,7 +115,6 @@ def test_correlate_with_matrix_builds_gaussian_copula() -> None:
     explicit_samples = explicit_copula.sample(size=1_000, seed=123)
 
     np.testing.assert_allclose(samples, explicit_samples[0] + explicit_samples[1])
-
 
 
 def test_model_refresh_replaces_cached_samples() -> None:

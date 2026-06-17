@@ -9,8 +9,8 @@ The intention is to make Monte Carlo models ergonomic enough for "back of the en
 problems in quick scripts or notebooks, while also supporting more advanced methods for
 heavier simulation workloads.
 
-`monte` is in development, and currently supports univariate distribution sampling,
-including correlated sampling using Copulas.
+`monte` is in development, and currently supports univariate continuous and discrete
+distribution sampling, including correlated sampling using Copulas.
 
 This documentation site collects runnable examples and report-style walkthroughs.
 
@@ -23,3 +23,6 @@ Arithmetic](examples/mc-composition.qmd): a new product launch profit model buil
 elicited distributions and ordinary Python arithmetic.
 - [Correlated Sampling with Copulas](examples/correlated-sampling.qmd): the same product
 launch model with correlated input sampling.
+- [Composing Discrete and Continuous Distributions](examples/equipment-failures.qmd):
+an equipment-failure planning model combining a Poisson event count with continuous
+average repair cost and downtime distributions.

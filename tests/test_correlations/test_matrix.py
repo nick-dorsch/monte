@@ -55,7 +55,6 @@ def test_correlation_matrix_rejects_non_psd_matrix() -> None:
         )
 
 
-
 def test_correlation_matrix_plot_returns_annotated_heatmap() -> None:
     import matplotlib.pyplot as plt
 
@@ -69,4 +68,3 @@ def test_correlation_matrix_plot_returns_annotated_heatmap() -> None:
     assert len(ax.texts) == 4
 
     plt.close(ax.figure)
-

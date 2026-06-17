@@ -16,18 +16,32 @@ from .continuous import (
     UvRealContinuous,
     UvUnitBoundedContinuous,
 )
+from .discrete import (
+    Bernoulli,
+    Binomial,
+    Poisson,
+    UvCountDiscrete,
+    UvDiscrete,
+    UvFiniteDiscrete,
+)
 
 __all__ = [
+    "Bernoulli",
     "Beta",
+    "Binomial",
     "Exponential",
     "Gamma",
     "LogitNormal",
     "LogNormal",
     "Normal",
     "PERT",
+    "Poisson",
     "StretchedBeta",
     "UvBoundedContinuous",
     "UvContinuous",
+    "UvCountDiscrete",
+    "UvDiscrete",
+    "UvFiniteDiscrete",
     "UvPositiveContinuous",
     "UvRealContinuous",
     "UvUnitBoundedContinuous",

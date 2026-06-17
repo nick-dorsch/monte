@@ -74,4 +74,3 @@ def test_student_t_copula_sample_shape_seed_and_nu() -> None:
 
     samples_tup = copula.sample(size=(10, 5), seed=42)
     assert samples_tup.shape == (2, 10, 5)
-
