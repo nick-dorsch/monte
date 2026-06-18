@@ -227,3 +227,16 @@ def test_reverse_and_unary_operations() -> None:
     model = abs(-((100 / x) ** 2))
 
     np.testing.assert_allclose(model.sample(size=8, seed=123), expected)
+
+
+def test_where_and_comparison_operations() -> None:
+    x = dr.Normal.elicit(-1.0, 1.0)
+    model = dr.where(x > 0, x * 2, -1)
+
+    rng = np.random.default_rng(123)
+    x_samples = x.sample(size=8, seed=rng)
+    expected = np.where(x_samples > 0, x_samples * 2, -1)
+
+    np.testing.assert_allclose(model.sample(size=8, seed=123), expected)
+    assert model.op == dr.MCOperation.WHERE
+    assert model.operands[0].op == dr.MCOperation.GREATER

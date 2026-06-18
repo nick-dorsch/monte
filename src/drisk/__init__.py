@@ -42,7 +42,7 @@ from .distributions import (
     UvRealContinuous,
     UvUnitBoundedContinuous,
 )
-from .models import MCModel
+from .models import MCModel, MCOperation, where
 
 __all__ = [
     "ArrayLike",
@@ -65,6 +65,7 @@ __all__ = [
     "Geometric",
     "LogitNormal",
     "MCModel",
+    "MCOperation",
     "LogNormal",
     "UvMixture",
     "NegativeBinomial",
@@ -86,4 +87,5 @@ __all__ = [
     "UvPositiveContinuous",
     "UvRealContinuous",
     "UvUnitBoundedContinuous",
+    "where",
 ]

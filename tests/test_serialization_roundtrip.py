@@ -133,11 +133,27 @@ def test_mc_model_json_round_trip_with_pydantic_type_adapter() -> None:
     model = (dr.Normal.elicit(0, 1, name="x") + 10) * dr.LogNormal.elicit(
         1, 3, name="y"
     )
+    model.sample(size=10, seed=123)
 
     adapter = TypeAdapter(type(model))
+    dumped = adapter.dump_python(model, mode="json")
     restored = adapter.validate_json(adapter.dump_json(model))
 
     assert type(restored) is type(model)
-    assert adapter.dump_python(restored, mode="json") == adapter.dump_python(
-        model, mode="json"
-    )
+    assert dumped["op"] == "multiply"
+    assert "_cached_samples" not in dumped
+    assert "_cached_size" not in dumped
+    assert "_cached_seed" not in dumped
+    assert adapter.dump_python(restored, mode="json") == dumped
+
+
+def test_where_model_json_round_trip_with_pydantic_type_adapter() -> None:
+    model = dr.where(dr.Normal.elicit(-1, 1, name="x") > 0, 1, 0)
+
+    adapter = TypeAdapter(type(model))
+    dumped = adapter.dump_python(model, mode="json")
+    restored = adapter.validate_json(adapter.dump_json(model))
+
+    assert dumped["op"] == "where"
+    assert dumped["operands"][0]["op"] == "greater"
+    assert adapter.dump_python(restored, mode="json") == dumped

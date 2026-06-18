@@ -3,26 +3,70 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Any, Self
 
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from drisk.arithmetic import ArithmeticMixin
-from drisk.copulas import Copula, GaussianCopula
+from drisk.copulas import Copula, GaussianCopula, SerializableCopula
 from drisk.correlations import CorrelationMatrix
 from drisk.distributions import ArrayLike, Distribution
 from drisk.random import SeedLike, get_rng
 from drisk.summary import percentile_label, threshold_probability_label
 
-Operation = Callable[..., Any]
 Operand = Any
 EvaluationCache = dict[tuple[type[Any], int], np.ndarray]
 
 
-@dataclass
-class MCModel(ArithmeticMixin):
+class MCOperation(StrEnum):
+    """Serializable operations supported by Monte Carlo model expressions."""
+
+    ADD = "add"
+    SUBTRACT = "subtract"
+    MULTIPLY = "multiply"
+    DIVIDE = "divide"
+    POWER = "power"
+    NEGATIVE = "negative"
+    POSITIVE = "positive"
+    ABS = "abs"
+    LESS = "less"
+    LESS_EQUAL = "less_equal"
+    GREATER = "greater"
+    GREATER_EQUAL = "greater_equal"
+    WHERE = "where"
+
+    @property
+    def function(self) -> Callable[..., Any]:
+        """Return the NumPy callable implementing this operation."""
+        return {
+            MCOperation.ADD: np.add,
+            MCOperation.SUBTRACT: np.subtract,
+            MCOperation.MULTIPLY: np.multiply,
+            MCOperation.DIVIDE: np.divide,
+            MCOperation.POWER: np.power,
+            MCOperation.NEGATIVE: np.negative,
+            MCOperation.POSITIVE: np.positive,
+            MCOperation.ABS: np.abs,
+            MCOperation.LESS: np.less,
+            MCOperation.LESS_EQUAL: np.less_equal,
+            MCOperation.GREATER: np.greater,
+            MCOperation.GREATER_EQUAL: np.greater_equal,
+            MCOperation.WHERE: np.where,
+        }[self]
+
+    @classmethod
+    def from_function(cls, op: Callable[..., Any]) -> Self:
+        """Return the serializable operation matching a NumPy callable."""
+        for operation in cls:
+            if op is operation.function:
+                return operation
+        raise ValueError(f"Unsupported MCModel operation: {op}")
+
+
+class MCModel(ArithmeticMixin, BaseModel):
     """
     Lazy Monte Carlo expression composed from distributions, constants, and models.
 
@@ -31,27 +75,39 @@ class MCModel(ArithmeticMixin):
     CDF, or inverse-CDF methods.
     """
 
-    op: Operation
+    op: MCOperation
     operands: tuple[Operand, ...]
     name: str | None = None
-    copula: Copula | None = None
-    _cached_samples: np.ndarray | None = field(default=None, init=False, repr=False)
-    _cached_size: int | tuple[int, ...] | None = field(
-        default=None,
-        init=False,
-        repr=False,
-    )
-    _cached_seed: SeedLike = field(default=None, init=False, repr=False)
+    copula: SerializableCopula | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+    _cached_samples: np.ndarray | None = PrivateAttr(default=None)
+    _cached_size: int | tuple[int, ...] | None = PrivateAttr(default=None)
+    _cached_seed: SeedLike = PrivateAttr(default=None)
 
     @classmethod
     def from_operation(
         cls,
-        op: Operation,
+        op: MCOperation | Callable[..., Any],
         *operands: Operand,
         name: str | None = None,
     ) -> MCModel:
         """Build a lazy model expression from an operation and operands."""
-        return cls(op=op, operands=operands, name=name)
+        operation = MCOperation.from_function(op) if callable(op) else op
+        return cls(op=operation, operands=operands, name=name)
+
+    @classmethod
+    def where(
+        cls,
+        condition: Operand,
+        x: Operand,
+        y: Operand,
+        *,
+        name: str | None = None,
+    ) -> MCModel:
+        """Build a lazy model expression equivalent to ``numpy.where``."""
+        return cls.from_operation(MCOperation.WHERE, condition, x, y, name=name)
 
     def sample(
         self,
@@ -306,7 +362,7 @@ class MCModel(ArithmeticMixin):
             _eval_operand(operand, size=size, seed=seed, cache=cache)
             for operand in self.operands
         ]
-        result = np.asarray(self.op(*values))
+        result = np.asarray(self.op.function(*values))
         cache[key] = result
         return result
 
