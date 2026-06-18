@@ -151,6 +151,72 @@ def test_model_summary_returns_configurable_dataframe() -> None:
     assert summary.loc["value", "p(> 0)"] == pytest.approx(np.mean(samples > 0))
 
 
+def test_model_summary_can_condition_statistics_on_threshold() -> None:
+    x = dr.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    summary = model.summary(
+        size=1_000,
+        seed=123,
+        threshold=0,
+        conditional_on_threshold=True,
+        percentiles=(90, 50, 10),
+        precision=None,
+    )
+
+    samples = model.sample(size=1_000, seed=123)
+    conditional_samples = samples[samples > 0]
+
+    assert summary.columns.tolist() == [
+        "p(> 0)",
+        "mean | > 0",
+        "p90 | > 0",
+        "p50 | > 0",
+        "p10 | > 0",
+    ]
+    assert summary.loc["value", "p(> 0)"] == pytest.approx(np.mean(samples > 0))
+    assert summary.loc["value", "mean | > 0"] == pytest.approx(
+        np.mean(conditional_samples)
+    )
+    assert summary.loc["value", "p90 | > 0"] == pytest.approx(
+        np.percentile(conditional_samples, 10)
+    )
+    assert summary.loc["value", "p50 | > 0"] == pytest.approx(
+        np.percentile(conditional_samples, 50)
+    )
+    assert summary.loc["value", "p10 | > 0"] == pytest.approx(
+        np.percentile(conditional_samples, 90)
+    )
+
+
+def test_model_summary_conditional_threshold_requires_threshold() -> None:
+    x = dr.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    with pytest.raises(ValueError, match="requires a threshold"):
+        model.summary(conditional_on_threshold=True)
+
+
+def test_model_summary_conditional_statistics_are_nan_without_exceedances() -> None:
+    x = dr.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    summary = model.summary(
+        size=1_000,
+        seed=123,
+        threshold=1_000,
+        conditional_on_threshold=True,
+        percentiles=(90, 50, 10),
+        precision=None,
+    )
+
+    assert summary.loc["value", "p(> 1000)"] == 0.0
+    assert np.isnan(summary.loc["value", "mean | > 1000"])
+    assert np.isnan(summary.loc["value", "p90 | > 1000"])
+    assert np.isnan(summary.loc["value", "p50 | > 1000"])
+    assert np.isnan(summary.loc["value", "p10 | > 1000"])
+
+
 def test_model_summary_uses_default_descending_percentiles() -> None:
     x = dr.Normal.elicit(-1.0, 1.0)
     model = x * 2

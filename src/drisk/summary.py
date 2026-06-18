@@ -51,7 +51,16 @@ def apply_percentile_yaxis(
     ax.set_ylim(bottom=0, top=1)
 
 
+def threshold_condition_label(threshold: float | int) -> str:
+    """Return a compact label for an exceedance condition."""
+    return f"> {float(threshold):g}"
+
+
 def threshold_probability_label(threshold: float | int) -> str:
     """Return a compact label for probability of exceeding a threshold."""
-    threshold_value = f"{float(threshold):g}"
-    return f"p(> {threshold_value})"
+    return f"p({threshold_condition_label(threshold)})"
+
+
+def conditional_stat_label(label: str, threshold: float | int) -> str:
+    """Return an explicit label for a statistic conditional on exceeding a threshold."""
+    return f"{label} | {threshold_condition_label(threshold)}"

@@ -121,7 +121,13 @@ A prospect is just the sum of the risked reservoir models.
 prospect = shallow.oil_mmbbl() + deep.oil_mmbbl() + flank.oil_mmbbl()
 prospect.name = "Prospect oil in place, MMbbl"
 
-summary = prospect.summary(size=50_000, seed=42, threshold=100, precision=1)
+summary = prospect.summary(
+    size=50_000, 
+    seed=42, 
+    threshold=0, 
+    conditional_on_threshold=True,
+    precision=1
+)
 summary
 ```
 
@@ -131,24 +137,11 @@ The distribution has a spike at zero because all reservoirs can fail, with a lon
 tail from combinations of success and larger volumetric outcomes.
 
 ```{python}
-summary_values = summary.loc["Prospect oil in place, MMbbl"]
-print(f"Mean: {summary_values['mean']:,.1f} MMbbl")
-print(
-    "P10 / P50 / P90: "
-    f"{summary_values['p10']:,.1f} / {summary_values['p50']:,.1f} / {summary_values['p90']:,.1f} MMbbl"
-)
-print(f"P(> 100 MMbbl): {summary_values['p(> 100)']:.1%}")
-```
-
-```{python}
 fig, ax = plt.subplots(figsize=(8, 4.5))
 prospect.plot(ax=ax, size=50_000, seed=42, color="#4C78A8")
 
-ax.axvline(100, color="black", linestyle="--", linewidth=1, label="100 MMbbl")
-ax.axvline(summary_values["p50"], color="#F58518", linewidth=2, label="Median")
 ax.set_title("Risked prospect oil in place")
 ax.set_xlabel("Oil in place, MMbbl")
-ax.legend()
 
 fig.tight_layout()
 ```

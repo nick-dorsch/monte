@@ -18,7 +18,9 @@ from drisk.random import SeedLike, get_rng
 from drisk.summary import (
     DEFAULT_PERCENTILES,
     apply_percentile_yaxis,
+    conditional_stat_label,
     descending_percentile_values,
+    percentile_label,
     threshold_probability_label,
 )
 
@@ -248,6 +250,7 @@ class MCModel(ArithmeticMixin, BaseModel):
         seed: SeedLike = None,
         refresh: bool = False,
         threshold: float | int | None = None,
+        conditional_on_threshold: bool = False,
         percentiles: list[float | int] | tuple[float | int, ...] = DEFAULT_PERCENTILES,
         precision: int | None = 2,
     ) -> pd.DataFrame:
@@ -255,20 +258,56 @@ class MCModel(ArithmeticMixin, BaseModel):
         Summarize simulated model outcomes as a tidy dataframe.
 
         The summary includes the mean, configurable descending percentiles, and optionally
-        the probability that simulated values exceed ``threshold``. Values are
-        rounded to ``precision`` decimal places by default; pass
-        ``precision=None`` to return unrounded values. Cached samples are reused
-        by default when available.
+        the probability that simulated values exceed ``threshold``. When
+        ``conditional_on_threshold`` is true, the mean and percentile values are
+        calculated only from values exceeding ``threshold`` and are explicitly
+        labeled with that condition. Values are rounded to ``precision`` decimal
+        places by default; pass ``precision=None`` to return unrounded values.
+        Cached samples are reused by default when available.
         """
-        samples = np.ravel(self._get_samples(size=size, seed=seed, refresh=refresh))
-        values: dict[str, float] = {"mean": float(np.mean(samples))}
+        if conditional_on_threshold and threshold is None:
+            raise ValueError(
+                "conditional_on_threshold=True requires a threshold to condition on"
+            )
 
-        if threshold is not None:
+        samples = np.ravel(self._get_samples(size=size, seed=seed, refresh=refresh))
+        summary_samples = samples
+        label_threshold = threshold if conditional_on_threshold else None
+        values: dict[str, float] = {}
+
+        if label_threshold is not None:
+            values[threshold_probability_label(label_threshold)] = float(
+                np.mean(samples > label_threshold)
+            )
+            summary_samples = samples[samples > label_threshold]
+
+        mean_label = "mean"
+        if label_threshold is not None:
+            mean_label = conditional_stat_label(mean_label, label_threshold)
+        values[mean_label] = (
+            float(np.mean(summary_samples)) if summary_samples.size else float("nan")
+        )
+
+        if threshold is not None and label_threshold is None:
             values[threshold_probability_label(threshold)] = float(
                 np.mean(samples > threshold)
             )
 
-        values.update(descending_percentile_values(samples, percentiles))
+        if summary_samples.size == 0:
+            percentile_values = {
+                percentile_label(percentile): float("nan") for percentile in percentiles
+            }
+        else:
+            percentile_values = descending_percentile_values(
+                summary_samples, percentiles
+            )
+
+        if label_threshold is not None:
+            percentile_values = {
+                conditional_stat_label(label, label_threshold): value
+                for label, value in percentile_values.items()
+            }
+        values.update(percentile_values)
 
         index_label = self.name or "value"
         summary = pd.DataFrame(values, index=pd.Index([index_label], name="metric"))
