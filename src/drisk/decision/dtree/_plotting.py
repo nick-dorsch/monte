@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-import numpy as np
-
 from drisk.random import SeedLike
 
 from .branches import ChanceBranch, DecisionBranch
@@ -27,22 +25,44 @@ class TreeLayoutNode:
 
 
 def build_tree_layout(root: DTreeNode) -> TreeLayoutNode:
-    leaf_counter = [0]
+    x_spacing = 2.0
+    y_spacing = 1.7
 
-    def build(node: DTreeNode, depth: int) -> TreeLayoutNode:
-        children = [
-            (branch, build(branch.node, depth + 1)) for branch in node_branches(node)
-        ]
-        if children:
-            x = float(np.mean([child.x for _, child in children]))
-        else:
-            x = float(leaf_counter[0])
-            leaf_counter[0] += 1
+    def subtree_width(node: DTreeNode) -> int:
+        widths = [subtree_width(branch.node) for branch in node_branches(node)]
+        return max(1, sum(widths))
+
+    def build(node: DTreeNode, depth: int, center: float) -> TreeLayoutNode:
+        branches = node_branches(node)
+        child_widths = [subtree_width(branch.node) for branch in branches]
+        children: list[tuple[DecisionBranch | ChanceBranch, TreeLayoutNode]] = []
+
+        for branch, child_center in zip(
+            branches, child_centers(center, child_widths), strict=True
+        ):
+            children.append((branch, build(branch.node, depth + 1, child_center)))
+
         return TreeLayoutNode(
-            node=node, x=x * 2.0, y=-depth * 1.7, depth=depth, children=children
+            node=node,
+            x=center * x_spacing,
+            y=-depth * y_spacing,
+            depth=depth,
+            children=children,
         )
 
-    return build(root, 0)
+    return build(root, 0, 0.0)
+
+
+def child_centers(parent_center: float, child_widths: list[int]) -> list[float]:
+    if not child_widths:
+        return []
+
+    positions = [0.0]
+    for left_width, right_width in zip(child_widths, child_widths[1:], strict=False):
+        positions.append(positions[-1] + (left_width + right_width) / 2)
+
+    center_offset = (positions[0] + positions[-1]) / 2
+    return [parent_center + position - center_offset for position in positions]
 
 
 def draw_tree_layout(
@@ -63,6 +83,7 @@ def draw_tree_layout(
         "chance": "#7B1E3A",
         "outcome": "#2F6DAE",
     }
+    node_scale = 0.75
     selected_branch = None
     if show_selected and isinstance(layout.node, DecisionNode):
         selected_branch = layout.node.selected_branch(size=size, seed=seed)
@@ -73,7 +94,7 @@ def draw_tree_layout(
         edge_width = 2.6 if is_selected else 1.4
         ax.plot(
             [layout.x, child.x],
-            [layout.y - 0.22, child.y + 0.28],
+            [layout.y - 0.22 * node_scale, child.y + 0.28 * node_scale],
             color=edge_color,
             linewidth=edge_width,
             zorder=1,
@@ -100,9 +121,9 @@ def draw_tree_layout(
     color = node_colors.get(layout.node.node_type, "#4C78A8")
     if isinstance(layout.node, DecisionNode):
         patch = Rectangle(
-            (layout.x - 0.26, layout.y - 0.26),
-            0.52,
-            0.52,
+            (layout.x - 0.26 * node_scale, layout.y - 0.26 * node_scale),
+            0.52 * node_scale,
+            0.52 * node_scale,
             facecolor=color,
             edgecolor="white",
             linewidth=1.6,
@@ -111,7 +132,7 @@ def draw_tree_layout(
     elif isinstance(layout.node, ChanceNode):
         patch = Circle(
             (layout.x, layout.y),
-            radius=0.30,
+            radius=0.30 * node_scale,
             facecolor=color,
             edgecolor="white",
             linewidth=1.6,
@@ -121,7 +142,7 @@ def draw_tree_layout(
         patch = RegularPolygon(
             (layout.x, layout.y),
             numVertices=3,
-            radius=0.36,
+            radius=0.36 * node_scale,
             orientation=0,
             facecolor=color,
             edgecolor="white",
@@ -145,7 +166,8 @@ def set_tree_limits(ax: Any, layout: TreeLayoutNode) -> None:
     nodes = list(walk_layout(layout))
     xs = [node.x for node in nodes]
     ys = [node.y for node in nodes]
-    ax.set_xlim(min(xs) - 1.0, max(xs) + 1.0)
+    x_extent = max(abs(min(xs)), abs(max(xs))) + 1.0
+    ax.set_xlim(-x_extent, x_extent)
     ax.set_ylim(min(ys) - 1.1, max(ys) + 0.8)
 
 
@@ -167,19 +189,28 @@ def draw_node_label(
     precision: int,
 ) -> None:
     label = node.name or node.node_type.title()
-    if show_expected_values:
-        value = node.expected_value(size=size, seed=seed)
-        label = f"{label}\nEV {format_tree_number(value, precision)}"
     ax.text(
-        x,
-        y - 0.48,
+        x + 0.28,
+        y + 0.24,
         label,
-        ha="center",
-        va="top",
+        ha="left",
+        va="bottom",
         fontsize=9,
         color="#222222",
         zorder=4,
     )
+    if show_expected_values:
+        value = node.expected_value(size=size, seed=seed)
+        ax.text(
+            x,
+            y - 0.48,
+            f"EV {format_tree_number(value, precision)}",
+            ha="center",
+            va="top",
+            fontsize=9,
+            color="#222222",
+            zorder=4,
+        )
 
 
 def draw_branch_label(

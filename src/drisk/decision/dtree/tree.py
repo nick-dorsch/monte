@@ -55,12 +55,21 @@ class DTree(BaseModel):
         size: int | tuple[int, ...] | None = None,
         seed: SeedLike = None,
         precision: int | None = 2,
+        node_types: str | tuple[str, ...] | None = "decision",
     ) -> pd.DataFrame:
-        """Return a tidy rollback table with selected decision branches."""
+        """Return a rollback table indexed by node.
+
+        By default, only decision-node branches are shown. Pass ``node_types=None`` to
+        include decision, chance, and outcome nodes, or pass a node type / tuple of
+        node types to filter the table.
+        """
         frame = pd.DataFrame(self.root.rollback_rows(size=size, seed=seed))
+        if node_types is not None:
+            included = (node_types,) if isinstance(node_types, str) else node_types
+            frame = frame[frame["node_type"].isin(included)]
         if precision is not None and "expected_value" in frame:
             frame["expected_value"] = frame["expected_value"].round(precision)
-        return frame
+        return frame.set_index("node")
 
     def sample(
         self,

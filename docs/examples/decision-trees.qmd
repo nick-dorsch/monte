@@ -12,7 +12,9 @@ expressions as uncertain values.
 
 This example evaluates whether to drill an exploration well. The decision maker can
 choose to drill or walk away. If they drill, the reservoir can be a success or a dry
-hole. The success case has an uncertain value represented by a lognormal distribution.
+hole. A successful discovery then creates a second decision: whether to develop the
+field. The developed-field value is uncertain and represented by a lognormal
+distribution.
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -23,38 +25,41 @@ import drisk as dr
 
 ## Define uncertain outcomes
 
-The success value is positive and right-skewed, so we model it as a lognormal
-distribution elicited from an 80% confidence interval. Drilling cost is shown on the
-branch as an up-front cost incurred before the chance outcome resolves.
+The developed-field value is positive and right-skewed, so we model it as a lognormal
+distribution elicited from an 80% confidence interval. Drilling cost is included in the
+terminal NPVs as an up-front cost incurred before the reservoir outcome resolves.
 
 ```{python}
-drill_cost = 12_000_000
+drill_cost = 8_000_000
 
-success_value = dr.LogNormal.elicit(
+developed_field_value = dr.LogNormal.elicit(
     lower=35_000_000,
-    upper=120_000_000,
+    upper=90_000_000,
     confidence=0.8,
-    name="Successful discovery value",
+    name="Developed field value",
 )
 
-success_npv = success_value - drill_cost
-success_outcome = dr.OutcomeNode(success_npv, name="Success NPV")
+develop_npv = developed_field_value - drill_cost
+develop_outcome = dr.OutcomeNode(develop_npv, name="Develop NPV")
+do_not_develop_outcome = dr.OutcomeNode(-drill_cost, name="Do not develop NPV")
 dry_hole_outcome = dr.OutcomeNode(-drill_cost, name="Dry hole NPV")
 ```
 
-An `OutcomeNode` can contain an `MCModel`, not just a scalar. Here the success outcome
-is itself uncertain because it is based on the lognormal discovery value.
+An `OutcomeNode` can contain an `MCModel`, not just a scalar. Here the develop outcome
+is itself uncertain because it is based on the lognormal developed-field value.
 
 ```{python}
 fig, ax = plt.subplots(figsize=(8, 4.5))
-dr.DTree(success_outcome, name="Success outcome").plot(
+
+dr.DTree(develop_outcome, name="Develop outcome").plot(
     ax=ax,
     size=50_000,
     seed=42,
     color="#4C78A8",
 )
+
 ax.axvline(0, color="black", linestyle="--", linewidth=1, label="Break-even")
-ax.set_title("CDF for the uncertain success outcome")
+ax.set_title("CDF for the uncertain develop outcome")
 ax.set_xlabel("NPV")
 ax.legend()
 fig.tight_layout()
@@ -69,31 +74,43 @@ The compact dictionary API keeps the tree close to the business diagram:
 
 ```{python}
 tree = dr.DTree(
-    dr.DecisionNode(
+    name="Exploration decision",
+    root=dr.DecisionNode(
         "Drill exploration well?",
         {
             "Drill": dr.ChanceNode(
-                "Reservoir outcome",
+                "Exploration outcome",
                 {
-                    "Success": (0.30, success_outcome),
-                    "Dry hole": (0.70, dry_hole_outcome),
+                    "Discovery": (
+                        0.75,
+                        dr.DecisionNode(
+                            "Develop field?",
+                            {
+                                "Develop": develop_outcome,
+                                "Do not develop": do_not_develop_outcome,
+                            },
+                        ),
+                    ),
+                    "Dry hole": (
+                        0.25, 
+                        dry_hole_outcome
+                    ),
                 },
             ),
-            "Walk away": 0,
+            "Walk": 0,
         },
     ),
-    name="Exploration decision",
 )
 ```
 
 ## Visualize the tree
 
-`plot_tree()` draws the tree from top to bottom using conventional business decision
--tree shapes: green squares for decisions, maroon circles for chance nodes, and blue
-triangles for outcomes.
+`plot_tree()` draws the tree from top to bottom using conventional business
+decision-tree shapes: green squares for decisions, maroon circles for chance nodes,
+and blue triangles for outcomes.
 
 ```{python}
-fig, ax = plt.subplots(figsize=(9, 6))
+fig, ax = plt.subplots(figsize=(16, 12))
 tree.plot_tree(ax=ax, size=50_000, seed=42, precision=0)
 ```
 
