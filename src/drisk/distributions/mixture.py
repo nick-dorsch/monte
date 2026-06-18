@@ -3,8 +3,9 @@
 from typing import Any, Literal, Self
 
 import numpy as np
-from pydantic import SerializeAsAny, model_validator
+from pydantic import model_validator
 
+from drisk.distributions.serializable import SerializableUvDistribution
 from drisk.distributions.types import ArrayLike
 from drisk.distributions.univariate import UvDistribution
 from drisk.random import SeedLike, get_rng
@@ -14,7 +15,7 @@ class UvMixture(UvDistribution):
     """Weighted mixture of one or more univariate component distributions."""
 
     dist_type: Literal["uv_mixture"] = "uv_mixture"
-    components: tuple[SerializeAsAny[UvDistribution], ...]
+    components: tuple[SerializableUvDistribution, ...]
     weights: tuple[float, ...]
     params: dict[str, float | int] = {}
 

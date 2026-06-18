@@ -2,6 +2,7 @@
 
 from .base import Distribution
 from .mixture import UvMixture
+from .serializable import SerializableDistribution, SerializableUvDistribution
 from .types import ArrayLike, DataFrameLike
 from .univariate import (
     PERT,
@@ -45,6 +46,8 @@ __all__ = [
     "Normal",
     "PERT",
     "Poisson",
+    "SerializableDistribution",
+    "SerializableUvDistribution",
     "StretchedBeta",
     "UvBoundedContinuous",
     "UvContinuous",

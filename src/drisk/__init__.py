@@ -1,7 +1,7 @@
 """Convenient tools for quick Monte Carlo modelling."""
 
 from . import _style as _style
-from .copulas import Copula, GaussianCopula, StudentTCopula
+from .copulas import Copula, GaussianCopula, SerializableCopula, StudentTCopula
 from .correlations import CorrelationMatrix
 from .decision import (
     ChanceBranch,
@@ -28,6 +28,8 @@ from .distributions import (
     NegativeBinomial,
     Normal,
     Poisson,
+    SerializableDistribution,
+    SerializableUvDistribution,
     StretchedBeta,
     UvBoundedContinuous,
     UvContinuous,
@@ -70,6 +72,9 @@ __all__ = [
     "OutcomeNode",
     "PERT",
     "Poisson",
+    "SerializableCopula",
+    "SerializableDistribution",
+    "SerializableUvDistribution",
     "StudentTCopula",
     "StretchedBeta",
     "UvBoundedContinuous",
