@@ -120,11 +120,8 @@ print(f"Probability of profit: {prob_profit:.1%}")
 ```{python}
 fig, ax = plt.subplots(figsize=(8, 4.5))
 profit.plot(ax=ax, color="#4C78A8")
-ax.axvline(0, color="black", linestyle="--", linewidth=1, label="Break-even")
-ax.axvline(p50, color="#F58518", linewidth=2, label="Median")
 ax.set_title("Simulated product launch profit")
 ax.set_xlabel("Profit")
-ax.legend()
 fig.tight_layout()
 ```
 

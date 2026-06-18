@@ -140,11 +140,36 @@ def test_model_summary_returns_configurable_dataframe() -> None:
         precision=None,
     )
 
+    samples = model.sample(size=1_000, seed=123)
+
     assert "value" in summary.index
     assert {"mean", "p(> 0)", "p99", "p50", "p1"}.issubset(summary.columns)
-    assert summary.loc["value", "p(> 0)"] == pytest.approx(
-        np.mean(model.sample(size=1_000, seed=123) > 0)
-    )
+    assert summary.loc["value", "p99"] == pytest.approx(np.percentile(samples, 1))
+    assert summary.loc["value", "p90"] == pytest.approx(np.percentile(samples, 10))
+    assert summary.loc["value", "p10"] == pytest.approx(np.percentile(samples, 90))
+    assert summary.loc["value", "p1"] == pytest.approx(np.percentile(samples, 99))
+    assert summary.loc["value", "p(> 0)"] == pytest.approx(np.mean(samples > 0))
+
+
+def test_model_summary_uses_default_descending_percentiles() -> None:
+    x = dr.Normal.elicit(-1.0, 1.0)
+    model = x * 2
+
+    summary = model.summary(size=1_000, seed=123, precision=None)
+    samples = model.sample(size=1_000, seed=123)
+
+    assert summary.columns.tolist() == [
+        "mean",
+        "p99",
+        "p90",
+        "p75",
+        "p50",
+        "p25",
+        "p10",
+        "p1",
+    ]
+    assert summary.loc["value", "p99"] == pytest.approx(np.percentile(samples, 1))
+    assert summary.loc["value", "p1"] == pytest.approx(np.percentile(samples, 99))
 
 
 def test_model_summary_rounds_to_default_precision() -> None:
@@ -181,6 +206,18 @@ def test_model_plot_returns_axes_and_uses_default_x_quantile_range() -> None:
     assert returned_ax is ax
     samples = np.ravel(model.sample(size=100, seed=123))
     assert ax.get_xlim() == pytest.approx(tuple(np.quantile(samples, (0.001, 0.999))))
+    assert ax.get_ylim() == pytest.approx((0, 1))
+    np.testing.assert_allclose(ax.get_yticks(), [0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99])
+    assert [label.get_text() for label in ax.get_yticklabels()] == [
+        "p99",
+        "p90",
+        "p75",
+        "p50",
+        "p25",
+        "p10",
+        "p1",
+    ]
+    assert ax.get_ylabel() == ""
 
     plt.close(fig)
 

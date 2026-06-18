@@ -15,7 +15,12 @@ from drisk.copulas import Copula, GaussianCopula, SerializableCopula
 from drisk.correlations import CorrelationMatrix
 from drisk.distributions import ArrayLike, Distribution
 from drisk.random import SeedLike, get_rng
-from drisk.summary import percentile_label, threshold_probability_label
+from drisk.summary import (
+    DEFAULT_PERCENTILES,
+    apply_percentile_yaxis,
+    descending_percentile_values,
+    threshold_probability_label,
+)
 
 Operand = Any
 EvaluationCache = dict[tuple[type[Any], int], np.ndarray]
@@ -243,13 +248,13 @@ class MCModel(ArithmeticMixin, BaseModel):
         seed: SeedLike = None,
         refresh: bool = False,
         threshold: float | int | None = None,
-        percentiles: list[float | int] | tuple[float | int, ...] = (90, 50, 10),
+        percentiles: list[float | int] | tuple[float | int, ...] = DEFAULT_PERCENTILES,
         precision: int | None = 2,
     ) -> pd.DataFrame:
         """
         Summarize simulated model outcomes as a tidy dataframe.
 
-        The summary includes the mean, configurable percentiles, and optionally
+        The summary includes the mean, configurable descending percentiles, and optionally
         the probability that simulated values exceed ``threshold``. Values are
         rounded to ``precision`` decimal places by default; pass
         ``precision=None`` to return unrounded values. Cached samples are reused
@@ -263,15 +268,7 @@ class MCModel(ArithmeticMixin, BaseModel):
                 np.mean(samples > threshold)
             )
 
-        percentile_values = np.percentile(samples, percentiles)
-        values.update(
-            {
-                percentile_label(percentile): float(value)
-                for percentile, value in zip(
-                    percentiles, percentile_values, strict=True
-                )
-            }
-        )
+        values.update(descending_percentile_values(samples, percentiles))
 
         index_label = self.name or "value"
         summary = pd.DataFrame(values, index=pd.Index([index_label], name="metric"))
@@ -328,8 +325,7 @@ class MCModel(ArithmeticMixin, BaseModel):
             ax.set_xlim(*np.quantile(samples, x_quantile_range))
 
         ax.set_xlabel(self.name or "value")
-        ax.set_ylabel("cumulative probability")
-        ax.set_ylim(bottom=0, top=1)
+        apply_percentile_yaxis(ax)
         ax.set_title(self.name or "Monte Carlo model")
 
         hist_ax.set_ylim(bottom=0)

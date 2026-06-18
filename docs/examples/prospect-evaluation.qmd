@@ -143,11 +143,13 @@ print(f"P(> 100 MMbbl): {summary_values['p(> 100)']:.1%}")
 ```{python}
 fig, ax = plt.subplots(figsize=(8, 4.5))
 prospect.plot(ax=ax, size=50_000, seed=42, color="#4C78A8")
+
 ax.axvline(100, color="black", linestyle="--", linewidth=1, label="100 MMbbl")
 ax.axvline(summary_values["p50"], color="#F58518", linewidth=2, label="Median")
 ax.set_title("Risked prospect oil in place")
 ax.set_xlabel("Oil in place, MMbbl")
 ax.legend()
+
 fig.tight_layout()
 ```
 
