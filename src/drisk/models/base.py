@@ -315,6 +315,73 @@ class MCModel(ArithmeticMixin, BaseModel):
             summary = summary.round(precision)
         return summary
 
+    def sensitivity_analysis(
+        self,
+        *,
+        percentiles: list[float | int] | tuple[float | int, ...] = DEFAULT_PERCENTILES,
+        center_percentile: float | int = 50,
+        precision: int | None = 2,
+    ) -> Any:
+        """Return a serializable one-at-a-time sensitivity analysis object."""
+        from drisk.sensitivity import OneAtATimeSensitivity
+
+        return OneAtATimeSensitivity(
+            self,
+            percentiles=tuple(percentiles),
+            center_percentile=center_percentile,
+            precision=precision,
+        )
+
+    def sensitivity(
+        self,
+        *,
+        percentiles: list[float | int] | tuple[float | int, ...] = DEFAULT_PERCENTILES,
+        center_percentile: float | int = 50,
+        precision: int | None = 2,
+    ) -> pd.DataFrame:
+        """
+        Run one-at-a-time sensitivity analysis over distribution leaves.
+
+        The baseline fixes every distribution leaf to ``center_percentile``.
+        Each distribution is then varied through ``percentiles`` while all other
+        distribution leaves remain fixed at the centre value. Constants are not
+        included as sensitivity variables.
+        """
+        return self.sensitivity_analysis(
+            percentiles=percentiles,
+            center_percentile=center_percentile,
+            precision=precision,
+        ).evaluate()
+
+    def plot_sensitivity(
+        self,
+        ax: Any = None,
+        *,
+        percentiles: list[float | int] | tuple[float | int, ...] = DEFAULT_PERCENTILES,
+        center_percentile: float | int = 50,
+        precision: int | None = 2,
+        show: bool = False,
+        positive_color: str = "seagreen",
+        negative_color: str = "firebrick",
+        baseline_kwargs: dict[str, Any] | None = None,
+        bar_kwargs: dict[str, Any] | None = None,
+        line_kwargs: dict[str, Any] | None = None,
+    ) -> Any:
+        """Plot a one-at-a-time sensitivity tornado chart for this model."""
+        return self.sensitivity_analysis(
+            percentiles=percentiles,
+            center_percentile=center_percentile,
+            precision=precision,
+        ).plot(
+            ax=ax,
+            show=show,
+            positive_color=positive_color,
+            negative_color=negative_color,
+            baseline_kwargs=baseline_kwargs,
+            bar_kwargs=bar_kwargs,
+            line_kwargs=line_kwargs,
+        )
+
     def plot(
         self,
         ax: Any = None,
