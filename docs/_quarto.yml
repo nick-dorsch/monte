@@ -8,6 +8,8 @@ metadata-files:
 website:
   title: "drisk"
   site-url: "https://nick-dorsch.github.io/drisk/"
+  repo-url: "https://github.com/nick-dorsch/drisk"
+  repo-actions: [source, issue]
   description: "Examples and reports for composable Monte Carlo modelling with drisk."
   navbar:
     left:
@@ -33,6 +35,10 @@ website:
             text: Prospect evaluation
           - href: examples/decision-trees.qmd
             text: Decision trees
+    right:
+      - icon: github
+        href: "https://github.com/nick-dorsch/drisk"
+        aria-label: GitHub repository
 
 format:
   html:
