@@ -121,6 +121,13 @@ flank = Reservoir(
 )
 ```
 
+Each reservoir variable can be conveniently plotting like any other distribution, for
+example:
+
+```{python}
+flank.net_m.plot(color="salmon")
+```
+
 ## Compose the prospect model
 
 A prospect is just the sum of the risked reservoir models.
