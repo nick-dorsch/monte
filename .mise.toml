@@ -26,6 +26,11 @@ run = "uv run ruff format ."
 description = "Run lint and tests"
 depends = ["lint", "test"]
 
+
+[tasks.publish]
+description = "Run release checks, build, validate, test-install, and upload to PyPI"
+run = "bash deploy/publish.sh"
+
 [tasks.docs]
 description = "Preview docs with live Quarto and quartodoc updates"
 depends = ["docs:quartodoc", "docs:preview"]
