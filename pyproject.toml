@@ -30,6 +30,7 @@ keywords = [
     "elicitation",
     "uncertainty",
 ]
+
 dependencies = [
     "matplotlib>=3.11.0",
     "numpy>=2.2.4",
@@ -37,6 +38,11 @@ dependencies = [
     "pydantic>=2.13.4",
     "scipy>=1.17.1",
 ]
+
+[project.urls]
+Documentation = "https://nick-dorsch.github.io/drisk/"
+Repository = "https://github.com/nick-dorsch/drisk"
+Issues = "https://github.com/nick-dorsch/drisk/issues"
 
 [dependency-groups]
 dev = [

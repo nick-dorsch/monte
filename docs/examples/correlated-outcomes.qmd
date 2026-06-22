@@ -82,12 +82,14 @@ outcomes will usually be smaller, especially when event probabilities are far fr
 latent_form_correlation = 0.85
 n_races = len(race_wins)
 
-correlation_matrix = np.full((n_races, n_races), latent_form_correlation)
-np.fill_diagonal(correlation_matrix, 1.0)
+correlation_matrix = dr.CorrelationMatrix.from_n_corr(
+    n_races,
+    latent_form_correlation,
+)
 
 form_copula = dr.GaussianCopula(
     distributions=tuple(race_wins),
-    corr_matrix=dr.CorrelationMatrix.from_numpy(correlation_matrix),
+    corr_matrix=correlation_matrix,
 )
 
 correlated_race_samples = form_copula.sample(size=size, seed=42)

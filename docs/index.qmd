@@ -2,16 +2,19 @@
 title: "drisk"
 ---
 
-`drisk` is a Python package designed for quick Monte Carlo modelling, with an emphasis
-on distribution elicitation and composable models.
+`drisk` is a Python package for quick Monte Carlo modelling, with an emphasis on ergonomic distribution elicitation and model composability.
 
-The intention is to make Monte Carlo models ergonomic enough for "back of the envelope"
-problems in quick scripts or notebooks, while also supporting more advanced methods for
-heavier simulation workloads.
+It is designed to make probabilistic models simple enough for quick scripts and notebooks, while still supporting more structured simulation workflows.
 
-`drisk` is in development, and currently supports univariate continuous and discrete
-distribution sampling, correlated sampling using Copulas, composable Monte Carlo
-models, and decision support workflows such as decision-tree rollback analysis.
+Key features include:
+
+- univariate continuous and discrete distribution sampling
+- percentile-based and parameter-based distribution elicitation
+- composable Monte Carlo models using ordinary Python arithmetic
+- correlated sampling with correlation matrices and copulas
+- mixture distributions for combining multiple uncertainty regimes
+- decision support workflows, including decision-tree rollback analysis
+- one-at-a-time sensitivity analysis for comparing model input impacts
 
 This documentation site collects runnable examples and report-style walkthroughs.
 

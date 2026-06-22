@@ -1,10 +1,37 @@
 # drisk
 
-Composable tools for quick Monte Carlo modelling, with an emphasis on distribution elicitation and model composition.
+Composable tools for quick Monte Carlo modelling, with an emphasis on distribution
+elicitation and model composition.
 
-Drisk provides a compact, notebook-friendly API for probability distributions, elicitation workflows, and composable Monte Carlo models.
+`drisk` provides a compact, notebook-friendly API for probability distributions,
+elicitation workflows, correlated sampling, decision trees, sensitivity analysis, and
+composable Monte Carlo models.
 
-## Usage
+> `drisk` is currently in alpha. APIs may change before a stable release.
+
+## Links
+
+- Documentation: <https://nick-dorsch.github.io/drisk/>
+- Repository: <https://github.com/nick-dorsch/drisk>
+- Issues: <https://github.com/nick-dorsch/drisk/issues>
+
+## Installation
+
+Install from PyPI:
+
+```bash
+pip install drisk
+```
+
+Or with `uv`:
+
+```bash
+uv add drisk
+```
+
+`drisk` requires Python 3.12 or newer.
+
+## Quick start
 
 ```python
 import drisk as dr
@@ -16,6 +43,23 @@ dist = dr.LogitNormal.elicit(low=0.1, high=0.25)
 samples = dist.sample(1_000)
 ```
 
+## Features
+
+- Continuous distributions such as `Normal`, `LogNormal`, `LogitNormal`, `Beta`, `PERT`, `Gamma`, and `Exponential`
+- Discrete distributions such as `Bernoulli`, `Binomial`, `Poisson`, `Geometric`, and `NegativeBinomial`
+- Distribution elicitation, fitting, sampling, plotting, and serialization-friendly parameters
+- Mixture distributions with `UvMixture`
+- Correlation matrix helpers and Gaussian / Student-t copulas
+- Composable Monte Carlo models via `MCModel`, `MCOperation`, and `where`
+- Decision tree modelling with chance, decision, and outcome nodes
+- One-at-a-time sensitivity analysis helpers
+
+## Documentation
+
+The documentation site includes examples and API reference pages:
+
+<https://nick-dorsch.github.io/drisk/>
+
 ## Developer setup
 
 This repository uses:
@@ -25,13 +69,15 @@ This repository uses:
 
 ### 1. Install tools with mise
 
-Install `mise` if you do not already have it, then install the tools pinned in `.mise.toml`:
+Install `mise` if you do not already have it, then install the tools pinned in
+`.mise.toml`:
 
 ```bash
 mise install
 ```
 
-This installs the project Python version, `uv`, `ruff`, and other helper tools for the repository.
+This installs the project Python version, `uv`, `ruff`, and other helper tools for the
+repository.
 
 ### 2. Install Python dependencies with uv
 
@@ -79,14 +125,20 @@ mise run docs      # preview the Quarto documentation site
 
 ```text
 src/drisk/
-  distributions/
-    base.py                  # shared distribution interfaces
-    types.py                 # shared typing helpers
-    univariate/
-      base.py                # univariate distribution interface
-      continuous/            # continuous domain interfaces + implementations
-  random.py                  # seed/RNG helpers
+  copulas/                  # copula interfaces and implementations
+  correlations/             # correlation matrix helpers
+  decision/                 # decision tree nodes, branches, and trees
+  distributions/            # distribution interfaces and implementations
+  models/                   # composable Monte Carlo model helpers
+  sensitivity/              # sensitivity analysis utilities
+  arithmetic.py             # arithmetic/composition helpers
+  random.py                 # seed/RNG helpers
+  summary.py                # summary helpers
 
-tests/                       # pytest suite
-docs/                        # Quarto documentation site
+tests/                      # pytest suite
+docs/                       # Quarto documentation site
 ```
+
+## License
+
+`drisk` is distributed under the MIT License. See [LICENSE](LICENSE) for details.
