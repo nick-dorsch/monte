@@ -4,13 +4,14 @@ set -Eeuo pipefail
 usage() {
   cat <<'EOF'
 Usage:
+  deploy/publish.sh
   deploy/publish.sh --yes
 
 Runs the release checks, builds the package, validates the artifacts, tests a local
-wheel install, then uploads to PyPI.
+wheel install, asks for confirmation, then uploads to PyPI.
 
 Options:
-  --yes, -y   Required to upload to PyPI
+  --yes, -y   Skip the interactive confirmation prompt
   --help, -h  Show this help
 
 Authentication is handled by twine. For API-token auth, use username __token__
@@ -18,12 +19,12 @@ and your PyPI token as the password, or configure ~/.pypirc.
 EOF
 }
 
-yes="false"
+skip_confirm="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --yes|-y)
-      yes="true"
+      skip_confirm="true"
       shift
       ;;
     --help|-h)
@@ -37,12 +38,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if [[ "$yes" != "true" ]]; then
-  echo "Error: PyPI uploads require --yes to avoid accidental releases." >&2
-  usage >&2
-  exit 2
-fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
@@ -91,6 +86,16 @@ import drisk as dr
 print(f"Imported drisk from {dr.__file__}")
 print(dr.Normal.elicit(0, 1))
 PY
+
+if [[ "$skip_confirm" != "true" ]]; then
+  printf '\nReady to upload drisk %s to PyPI.\n' "$version"
+  printf 'This is permanent: PyPI files for a published version cannot be replaced.\n'
+  read -r -p "Type 'publish drisk $version' to continue: " confirmation
+  if [[ "$confirmation" != "publish drisk $version" ]]; then
+    echo "Upload cancelled."
+    exit 1
+  fi
+fi
 
 printf '\n==> Uploading to PyPI\n'
 uv run --with twine twine upload dist/*
